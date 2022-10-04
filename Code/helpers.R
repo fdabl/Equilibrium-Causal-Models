@@ -1,3 +1,4 @@
+library('MASS')
 library('dplyr')
 library('lavaan')
 library('ggplot2')
@@ -155,6 +156,98 @@ get_met <- function(Bhat, Btrue, Sigmahat, Sigma, max_p = 4) {
 }
 
 
+# Generate data with a particular trait / state variance composition
+get_measurement_dat <- function(n, trait_prop = 0.70, resid_cor = NULL) {
+  
+  # Beta matrix elements
+  a <- 0.5
+  b <- 1/3
+  c <- 0.25
+  d <- -0.5
+  
+  p <- 4
+  
+  # set latent variances
+  p11 <- p44 <- trait_prop
+  p22 <- (
+    -((a^2)*p11 + (a^2)*b*c*p11 - trait_prop +
+        (b^2)*trait_prop +b*c*trait_prop - (b^3)*c*trait_prop)/(1 + b*c)
+  )
+  
+  p33 <- (
+    -((d^2)*p44 + b*c*(d^2)*p44 - trait_prop +
+        b*c*trait_prop +(c^2)*trait_prop - b*(c^3)*trait_prop)/(1 + b*c)
+  )
+  
+  # Set measurement errors:
+  # if standardized variables, total variance is one, so
+  theta11 <- theta22 <- theta33 <- theta44 <- 1 - trait_prop
+  
+  # Make relevant matrices
+  I <- diag(p)
+  Psi <- diag(c(p11, p22, p33, p44))
+  Theta <- diag(c(theta11, theta22, theta33, theta44))
+  
+  # Add residual correlation between X1 and X2
+  if (!is.null(resid_cor)) {
+    Psi[1, 2] <- Psi[2, 1] <- resid_cor * sqrt(p11) * sqrt(p22)
+  }
+  
+  # SEM expression for covariance matrix
+  S <- (solve(I - B)) %*% Psi %*% t(solve(I - B)) + Theta
+  
+  dat <- mvrnorm(n, rep(0, p), S)
+  colnames(dat) <- paste0('X', seq(p))
+  dat
+}
+
+
+# Fit a lavaan model using knowledge about the latent state / trait variance composition
+get_lavaan_measurement <- function(dat, trait_prop) {
+  
+  state_prop <- 1 - trait_prop
+  model_spec <- str_glue(
+    '
+    # latent variable definitions 
+    l1 =~ X1
+    l2 =~ X2
+    l3 =~ X3
+    l4 =~ X4
+    
+    # regressions
+    l2 ~ a*l1 + b*l3
+    l3 ~ c*l2 + d*l4
+    
+    # constraints (set ME to zero)
+    X1 ~~ {state_prop}*X1
+    X2 ~~ {state_prop}*X2
+    X3 ~~ {state_prop}*X3
+    X4 ~~ {state_prop}*X4
+    l1 ~~ {trait_prop}*l1
+    l2 ~~ ResVar2*l2
+    l3 ~~ ResVar3*l3
+    l4 ~~ {trait_prop}*l4
+    
+    # residual variance specification
+    ResVar2 == (
+      -((a^2)*{trait_prop} + (a^2)*b*c*{trait_prop} -
+      {trait_prop} + (b^2)*{trait_prop} + b*c*{trait_prop} - (b^3)*c*{trait_prop})/(1 + b*c)
+    )
+    
+    ResVar3 == (
+    -((d^2)*{trait_prop} + b*c*(d^2)*{trait_prop} -
+    {trait_prop} + b*c*{trait_prop} + (c^2)*{trait_prop} - b*(c^3)*{trait_prop})/(1 + b*c)
+    )'
+  )
+  
+  fit <- sem(model_spec, data = dat, std.ov = FALSE)
+  Bhat <- lavInspect(fit, what = 'est')$beta
+  Sigmahat <- lavInspect(fit, what = 'est')$psi
+  class(Sigmahat) <- 'matrix'
+  
+  list('Bhat' = Bhat, 'Sigmahat' = Sigmahat)
+}
+
 # Create lavaan model structure from B matrix
 create_model_structure <- function(B, fix_coefs = FALSE, estimate_sigma = FALSE) {
   p <- ncol(B)
@@ -205,7 +298,7 @@ create_model_structure <- function(B, fix_coefs = FALSE, estimate_sigma = FALSE)
 get_lavaan <- function(dat, B, fix_coefs = FALSE, estimate_sigma = FALSE) {
   cnames <- colnames(dat)
   ms <- create_model_structure(B, fix_coefs = fix_coefs, estimate_sigma = estimate_sigma)
-  fit <- lavaan::sem(ms, std.ov = FALSE, std.lv = FALSE, data = dat)
+  fit <- sem(ms, std.ov = FALSE, std.lv = FALSE, data = dat)
   Bhat <- lavInspect(fit, what = 'est')$beta[cnames, cnames]
   Sigmahat <- lavInspect(fit, what = 'est')$psi[cnames, cnames]
   inthat <- lavInspect(fit, what = 'est')$alpha[cnames, ]

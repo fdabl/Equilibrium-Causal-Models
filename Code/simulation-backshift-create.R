@@ -4,7 +4,7 @@
 source('Code/helpers.R')
 
 cores <- detectCores()
-cl <- makeCluster(cores - 5)
+cl <- makeCluster(cores - 3)
 registerDoParallel(cl)
 
 B4 <- t(matrix(
