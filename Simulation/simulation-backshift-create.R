@@ -1,7 +1,9 @@
 # ########################################################################
 # This script runs the backshift simulation study summarized in Appendix C
 # ########################################################################
-source('Code/helpers.R')
+source('functions_helpers.R')
+source('functions_ecm.R')
+
 
 cores <- detectCores()
 cl <- makeCluster(cores - 3)

@@ -1,3 +1,7 @@
+source('functions_helpers.R')
+source('functions_ecm.R')
+
+
 B4 <- t(matrix(
   c(.5,   0, 0,  0,
     .3, .4, .2,  0,

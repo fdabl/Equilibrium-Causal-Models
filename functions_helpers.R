@@ -9,6 +9,269 @@ library('matrixcalc')
 library('doParallel')
 library('RColorBrewer')
 
+
+# Get beta estimates from the simulation results object
+get_beta <- function(res, resid_cor = 0, resid_prop = 0) {
+  p <- 4
+  
+  count <- 0
+  Best <- matrix(0, p, p)
+  
+  is_equal <- function(x, y) abs(x - y) < 0.01
+  
+  for (i in seq(nrow(res))) {
+    el <- res[i, ]
+    
+    if (is_equal(el$resid_cor, resid_cor) && is_equal(el$resid_prop, resid_prop)) {
+      count <- count + 1
+      Best <- Best + el$Bsnap
+    }
+  }
+  
+  Best <- Best / count
+  Best
+}
+
+# Get results data from the simulation results object
+get_dat <- function(res, key = 'dat') {
+  dat <- do.call('rbind', lapply(seq(nrow(res)), function(i) {
+    res[i, ][[key]]
+  }))
+  
+  dat
+}
+
+
+# Function for creating boxplots
+plot_box <- function(dat, target, variable, x_axis = TRUE, ...) {
+  cols <- colorRampPalette(brewer.pal(9, 'Blues'))(11)
+  cols <- brewer.pal(3, 'Dark2')
+  d <- dat[dat$target == target & dat$variable == variable, ]
+  
+  label_x <- seq(1.25, by = 1.50, length.out = 6)
+  at_x <- c(sapply(label_x, function(x) { c(x - 0.40, x, x + 0.40) }))
+  
+  boxplot(
+    value ~ resid_cor + resid_prop, axes = FALSE, data = d,
+    col = cols, pch = 20,
+    pars = list(boxwex = 0.40, staplewex = 0.40, outwex = 0.20),
+    cex.lab = 1.25, cex.main = 1.50, outline = FALSE, at = at_x, ...
+  )
+  
+  if (x_axis) {
+    axis(1, at = label_x, labels = unique(dat$resid_prop))
+  }
+}
+
+
+# add true effect to plot
+add_true_effect <- function(target, effect, xlims = c(50, 1000)) {
+  true_effects <- comp_press(B, rep(0, 4), target = target, a = 1)
+  lines(
+    x = xlims, y = c(true_effects[effect], true_effects[effect]),
+    lwd = 2, lty = 2, col = 'gray76'
+  )
+}
+
+# add true effects for figure 4
+add_true_effect2 <- function(target, effect) {
+  label_x <- seq(1, by = 1.75, length.out = 6)
+  true_effects <- comp_press(B, rep(0, 4), target = target, a = 1)
+  lines(
+    x = c(0.75, 9.50), y = c(true_effects[effect], true_effects[effect]),
+    lwd = 2, lty = 2, col = 'gray76'
+  )
+}
+
+# add true parameter to plot
+add_true_param <- function(B, target, effect, xlims = c(50, 1000)) {
+  lines(
+    x = xlims, y = c(B[target, effect], B[target, effect]),
+    lwd = 2, lty = 2, col = 'gray76'
+  )
+}
+
+# add standard deviations to plot
+add_sdband <- function(n, m, sd, col) {
+  polygon(
+    c(n, rev(n)), c(m - sd, rev(m + sd)),
+    col = adjustcolor(col, 0.25), border = NA
+  )
+}
+
+
+# Function for creating line plots
+plot_estimation <- function(
+    x, d1, d2, d3, d4, ylim, y_axis = TRUE,
+    cols = brewer.pal(4, 'Dark2'), ...
+) {
+  
+  plot(
+    x, d1$mean, axes = FALSE,
+    pch = 20, ylim = ylim, cex = 1.25,
+    type = 'l', lwd = 2, col = cols[1],
+    cex.lab = 1.25, font.main = 1, ...
+  )
+  
+  add_sdband(x, d1$mean, d1$sd, cols[1])
+  lines(x, d2$mean, lwd = 2, col = cols[2])
+  add_sdband(x, d2$mean, d2$sd, col = cols[2])
+  
+  lines(x, d3$mean, lwd = 2, col = cols[3])
+  add_sdband(x, d3$mean, d3$sd, col = cols[3])
+  
+  lines(x, d4$mean, lwd = 2, col = cols[4])
+  add_sdband(x, d4$mean, d4$sd, col = cols[4])
+  
+  if (y_axis) {
+    axis(2, las = 2, at = seq(ylim[1], ylim[length(ylim)], 0.20))
+  }
+}
+
+
+# version 2 of the compute press function, used in plotting Figure 1
+compute_press <- function(c, Phi, target, press_value){
+  p <- nrow(Phi)
+  Phi_star <- Phi[-target,][,-target]
+  c_star <- c[-target]
+  Psi <- Phi[,target][-target]
+  mu <- rep(NA,p) ;   mu[target] <- press_value
+  mu[-target] <- solve(diag(p-1) - Phi_star)%*%(c_star + Psi%*%matrix(press_value,1,1))
+  mu
+}
+
+# function to create simulated VAR data for Figures 1 - 3
+simulate_dynamics <- function(c, B, press = NULL, times = 30, noise = T, noiseSD = 1, start = NULL) {
+  p <- nrow(B)
+  
+  x <- matrix(NA, nrow = times, ncol = p)
+  if(is.null(start)){ x[1, ] <- solve(diag(p) - B)%*%c } else {x[1,] <- start }
+  
+  for(t in seq(2, times)){
+    if(noise){epsilon <- rnorm(p,0,noiseSD)} else { epsilon <- rep(0,p)}
+    
+    x[t, ] <- c + B %*% x[t-1, ] + epsilon
+    
+    if (!is.null(press)) {
+      x[t, ] <- sapply(seq(p), function(i) ifelse(!is.na(press[i]), press[i], x[t, i]))
+    }
+  }
+  
+  x
+}
+
+# Make a nice looking network plot
+
+netplot <- function(mat, greyscale = FALSE, maximum = .5,asize = 12, edge.labels = TRUE,
+                    edge.label.cex = 2, fade = FALSE, shape = "circle",
+                    labels = c(expression(X[1]),
+                               expression(X[2]),
+                               expression(X[3]),
+                               expression(X[4])),
+                    vsize = 20,
+                    esize = 12,
+                    posCol = NULL,
+                    negCol = NULL, negdash = FALSE, ...){
+  
+  layout <- rbind(c(0,1), 
+                  c(1,1), 
+                  c(1,0),
+                  c(0,0))
+  
+  if(isTRUE(labels)){ labels = c("X1", "X2", "X3", "X4") }
+  
+  m_lty <- matrix(1, 4, 4)
+  if(isTRUE(negdash)){m_lty[mat<0] <- 2}
+  
+  if(is.null(posCol)) posCol <- "firebrick2"
+  if(is.null(negCol)) negCol <- "blue"
+  
+  m_col <- matrix(negCol,4,4)
+  m_col[mat > 0 ] <- posCol
+  if(greyscale){
+    qgraph::qgraph(t(mat), 
+                   layout = layout,
+                   directed = T, 
+                   edge.color = "darkgrey",
+                   edge.labels = edge.labels,
+                   edge.label.cex = edge.label.cex,
+                   edge.label.color = "darkgrey",
+                   # curved = FALSE, 
+                   lty = t(m_lty), 
+                   vsize = vsize, 
+                   esize = esize,
+                   asize= asize,
+                   # color = cols,
+                   mar = c(8, 10, 8, 8), maximum=maximum,
+                   fade = fade,
+                   shape = shape,
+                   maximum = maximum,
+                   labels = labels, ...)
+  } else{
+    qgraph::qgraph(t(mat),
+                   edge.color = t(m_col),
+                   layout = layout,
+                   directed = T, 
+                   edge.labels = edge.labels,
+                   edge.label.cex = edge.label.cex,
+                   # curved = FALSE, 
+                   lty = t(m_lty), 
+                   vsize = 20, 
+                   esize = 12,
+                   asize= asize,
+                   # color = cols,
+                   mar = c(8, 10, 8, 8), maximum=maximum,
+                   fade = fade,
+                   shape = shape,
+                   maximum = maximum,
+                   labels = labels, ...)
+  }
+}
+
+# -------------------------------------------
+
+# Time series plot
+
+
+plotTimeSeries <- function(x, xseq = NULL, cols, ylim = c(-3,3), 
+                           xlim = NULL, mu = NULL, 
+                           mu_mat  = NULL, mu_seq = NULL, axl = NA, cex.axis = 1,
+                           alphamu = 1, alphax = 1, mulwd = 2, cex.lab = 1.5){
+  if(is.null(xlim)) xlim = c(0,(nrow(x)))
+  if(is.null(xseq)) xseq = 0:(nrow(x)-1)
+  plot.new()
+  plot.window(xlim = xlim, ylim = ylim)
+  title(xlab = "Time (t)", ylab = expression(X[t]), cex.lab = cex.lab, line = axl)
+  axis(1, cex.axis = cex.axis); axis(2, cex.axis = cex.axis)
+  for(i in 1:ncol(x)){
+    lines(xseq,x[,i], col = alpha(cols[i],alphax), lwd = 2)
+    if(is.null(mu_mat)){
+      abline(h = mu[i], col = alpha(cols[i],alphamu), lty = 2, lwd = mulwd)
+    } else{
+      lines(y = mu_mat[,i], x = mu_seq, col = alpha(cols[i],alphamu), lty = 2, lwd = mulwd)
+    }
+    # abline(h = mean(x[,i]), col = cols[i], lty = 3, lwd = 2)
+  }
+}
+
+plotLegend <- function(x = -1.25, y = .75, lty = c(1,1,1,1,2), cols, 
+                       legend = c(expression(X["1,t"]),
+                                  expression(X["2,t"]),
+                                  expression(X["3,t"]),
+                                  expression(X["4,t"]),
+                                  expression(mu)),
+                       cex = 1.15, lwd = 2,plotnew = TRUE, ...){
+  if(isTRUE(plotnew)){
+    plot.new()
+  }
+  par(xpd=TRUE)
+  legend(x=x,y = y, lty = lty, col = c(cols, "gray"), 
+         legend = legend,
+         cex = cex, lwd = lwd, ...)
+  par(xpd=FALSE)
+}
+
+
 # custom ggplot theme
 custom_theme <- theme_minimal() +
   theme(
@@ -31,81 +294,7 @@ custom_theme <- theme_minimal() +
   )
 
 
-# Rescale VAR(1) matrix to result in equilibrium matrix
-rs_beta <- function(B){
-  p <- ncol(B)
-  ind <- which(diag(B)!=0)
-  if(length(ind)== 0){ return(B)} else {
-    B_t <- B
-    
-    # Hytinnen - apply the following repeatedly for all B[i,i] != 0
-    for(i in ind){
-      # let U be a square 0 matrix with U[i,i] = 1 iff B[i,i] != 0
-      U <- matrix(0,p,p)
-      U[i,i] <- 1
-      B_t <- B_t - (B_t[i,i]/(1-B_t[i,i]))*U%*%(diag(p)-B_t)
-    }
-    return(B_t)
-  }  
-}
 
-
-# Create equilibrium data
-create_eqdat <- function(B, intercepts) {
-  p <- nrow(B)
-  data.frame(intercepts %*% solve(diag(p) - B))
-}
-
-
-# Create noise data
-create_noisedat <- function(B, intercepts, Sigma_noise) {
-  p <- nrow(B)
-  
-  Sigma_vec <- solve(diag(p^2) - kronecker(B, B)) %*% vec(Sigma_noise)
-  Sigma <- matrix(Sigma_vec, p, p)
-  
-  dat_noise <- t(apply(intercepts, 1, function(x) {
-    rmvnorm(1, mean = rep(0, p), sigma = Sigma)
-  }))
-  
-  dat_noise
-}
-
-
-# Compute the effect of a press intervention
-comp_press <- function(Beta, intercepts, target, a = 1){
-  p <- nrow(Beta)
-  Pk <- diag(p)
-  Pk[target,target] <- 0
-  avec <- rep(0,p)
-  avec[target] <- a
-  
-  if(any(abs(Re(eigen(Pk%*%Beta)$values))>1)) stop("Intervened System Unstable")
-  solve(diag(p)  - Pk%*%Beta)%*%(Pk%*%intercepts + avec)
-}
-
-
-# Compute the effect of a shift intervention
-comp_int <- function(Beta, 
-                     Sigma = NULL, 
-                     x_int = NULL, # (input 1) column vector of intervention values
-                     iv = NULL, # (input 2) target variable for intervention
-                     effectsize = 1, # (input 2) how many sd's to raise the intercept?
-                     cvec = NULL # (input 2) optional vector of intercepts of original system
-){
-  p <- ncol(Beta)
-  if(!is.null(x_int)){
-    warning("x_int supplied so ignoring iv, cvec, Sigma and effectsize arguments")
-    out <- solve(diag(p)  - Beta)%*%x_int
-  } else{
-    # if you supplied cvec, i interpret iv and effectsize as CHANGING cvec by a certain amount
-    if(!is.null(cvec)) x_int <- cvec else x_int <- rep(0,p)
-    # interventions are here defined as changing the intercept by effectsize SDs
-    x_int[iv] <- x_int[iv] + sqrt(Sigma[iv,iv])*effectsize
-    out <- solve(diag(p) - Beta)%*%x_int
-  }
-  return(out)
-}
 
 # Calculate metrics from estimated backshift matrices
 get_met <- function(Bhat, Btrue, Sigmahat, Sigma, max_p = 4) {

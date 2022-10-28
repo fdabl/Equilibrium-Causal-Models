@@ -3,137 +3,211 @@ library('tidyr')
 library('ggplot2')
 library('latex2exp')
 library('RColorBrewer')
-source('Code/helpers.R')
+library('qgraph')
+library('scales')
+source('functions_helpers.R')
+source('functions_ecm.R')
+
+# set up basic plotting parameters
 cols <- brewer.pal(3, 'Set1')
 
-# Get beta estimates from the simulation results object
-get_beta <- function(res, resid_cor = 0, resid_prop = 0) {
-  p <- 4
-  
-  count <- 0
-  Best <- matrix(0, p, p)
-  
-  is_equal <- function(x, y) abs(x - y) < 0.01
-  
-  for (i in seq(nrow(res))) {
-    el <- res[i, ]
-    
-    if (is_equal(el$resid_cor, resid_cor) && is_equal(el$resid_prop, resid_prop)) {
-      count <- count + 1
-      Best <- Best + el$Bsnap
-    }
-  }
-  
-  Best <- Best / count
-  Best
-}
+edgecols <- brewer.pal(3, 'Set1')[-3]
+posCol <- edgecols[2]
+negCol <- edgecols[1]
 
-# Get results data from the simulation results object
-get_dat <- function(res, key = 'dat') {
-  dat <- do.call('rbind', lapply(seq(nrow(res)), function(i) {
-    res[i, ][[key]]
-  }))
-  
-  dat
-}
+colsts <- RColorBrewer::brewer.pal(4, "Dark2")
 
-# Function for creating boxplots
-plot_box <- function(dat, target, variable, x_axis = TRUE, ...) {
-  cols <- colorRampPalette(brewer.pal(9, 'Blues'))(11)
-  cols <- brewer.pal(3, 'Dark2')
-  d <- dat[dat$target == target & dat$variable == variable, ]
-  
-  label_x <- seq(1.25, by = 1.50, length.out = 6)
-  at_x <- c(sapply(label_x, function(x) { c(x - 0.40, x, x + 0.40) }))
-  
-  boxplot(
-    value ~ resid_cor + resid_prop, axes = FALSE, data = d,
-    col = cols, pch = 20,
-    pars = list(boxwex = 0.40, staplewex = 0.40, outwex = 0.20),
-    cex.lab = 1.25, cex.main = 1.50, outline = FALSE, at = at_x, ...
-  )
-  
-  if (x_axis) {
-    axis(1, at = label_x, labels = unique(dat$resid_prop))
-  }
-}
+# ------------------------------------------------------------------------------------
+# ---------------------------------- Figure 1 ----------------------------------------
+# ------------------------------------------------------------------------------------
+
+p <- 4
+
+B <- matrix(c(.5,0,0,0,
+              .3,.4,.2,0,
+              0,.2,.2,-.4,
+              0,0,0,.4),p,p,byrow = T)
+intercepts <- c(.5,1.25,-2,-1.25)
+
+rs_beta(B)
+
+mu <- solve(diag(p) - B)%*%intercepts
+mu
+
+set.seed(1234)
+x <- simulate_dynamics(intercepts, B, press = NULL, times = 50, noise = T, noiseSD = .3)
+xseq <- c(0:(nrow(x)-1))
 
 
+pdf("Figures/figure1_network_data.pdf", 10*1.2, 4*1.2)
+layout(t(c(1,2,3)), widths = c(1,1,.25))
+par(xpd = FALSE)
+# calls functions in functions_plotting.R
+netplot(B, posCol = posCol,negCol = negCol,
+        edge.label.position = c(0.5,0.5,0.5,0.425,0.425,0.5,0.5,0.5))
+plotTimeSeries(x, xseq, cols = colsts, mu = mu, axl = 2.2, cex.axis = 1.5, cex.lab = 2.2)
+plotLegend(cols = colsts, bty = 'n', cex = 2)
+dev.off()
 
-###########################
-##### Sanity Results Figure
-###########################
+
+# ------------------------------------------------------------------------------------
+# ---------------------------------- Figure 2 ----------------------------------------
+# ------------------------------------------------------------------------------------
+
+# Figure panels plotted seperately and then combined in Illustrator
+
+# --------------- Pulse Intervention ---------------
+
+par(mfrow = c(1,3))
+set.seed(12)
+x0 <- simulate_dynamics(intercepts, B, press = NULL, times = 11, noise = T, noiseSD = .3)
+
+target <- 1
+pulse <- 0
+start <- x0[nrow(x0),]
+start[target] <- pulse
+
+set.seed(123)
+x1 <- simulate_dynamics(intercepts, B, press= NULL, times = 20, noise = T, noiseSD = .3, start = start)
+
+pulsedata <- rbind(x0,x1)
+pulsetime <- c(0:10,10:29)
+
+pdf("figures/figure2_pulseint.pdf", 5*1.4, 4*1.4)
+plotTimeSeries(pulsedata, xseq = pulsetime, cols = colsts, mu = mu, axl = 2.4, cex.axis = 1.35, cex.lab = 2)
+points(x = 10, y = pulse, pch = 23, cex = 2.5, lwd = 2, col = colsts[target], bg = colsts[target])
+dev.off()
+
+
+
+# --------------- Shift Intervention ---------------
+
+shift_value = -.5
+shift <- intercepts
+shift[target] <- intercepts[target] + shift_value
+munew <- solve(diag(p) - B)%*%shift
+start_shift <- x0[nrow(x0),]
+
+
+set.seed(123)
+xshift <- simulate_dynamics(shift, B, press= NULL, times = 20, noise = TRUE, noiseSD = .3, start = start_shift)
+shiftdata <- rbind(x0,xshift)
+shifttime <- c(0:10,10:29)
+shift_mutime <- c(shifttime,29:30)
+
+mu_mat <- rbind(matrix(rep(mu,11),11,4, byrow = TRUE),
+                matrix(rep(munew,22),22,4, byrow = TRUE))
+
+pdf("figures/figure2_shift_intervention.pdf",  5*1.4, 4*1.4)
+plotTimeSeries(x = shiftdata, xseq = shifttime, cols = colsts, mu_mat = mu_mat, mu_seq = shift_mutime,
+               axl = 2.4, cex.axis = 1.35, cex.lab = 2)
+points(x = shifttime[11], 
+       y = shiftdata[11,target], pch = 21, cex = 2.5, lwd = 2, col = "black", bg = colsts[target] )
+dev.off()
+
+# --------------- Press Intervention ---------------
+
+press_value = -.5
+
+mu_press <- compute_press(c = intercepts, B, target =target, press_value = press_value)
+startpress <- x0[nrow(x0),]
+startpress[target] <- mu_press[target]
+
+set.seed(12345)
+xpress <- simulate_dynamics(intercepts, B, press = c(press_value, NA,NA,NA), times = 20, noise = TRUE, noiseSD =.3,
+                            start = startpress)
+
+mu_matpress <- rbind(matrix(rep(mu,11),11,4, byrow = TRUE),
+                     matrix(rep(mu_press,22),22,4, byrow = TRUE))
+
+pressdata <- rbind(x0,xpress)
+presstime <- c(0:10,10:29)
+press_mutime <- c(presstime,29:30)
+
+pdf("figures/figure2_pressint.pdf", 5*1.4, 4*1.4)
+plotTimeSeries(x = pressdata, xseq = presstime, cols = colsts, mu_mat = mu_matpress, mu_seq = press_mutime,
+               axl = 2.4, cex.axis = 1.35, cex.lab = 2)
+points(x = presstime[11], 
+       y = pressdata[11,target], pch = 23, cex = 2.5, lwd = 2, col = "black", bg = colsts[target])
+dev.off()
+
+# ----------------------- Create Legend ----------------
+pdf("figures/figure2_legends.pdf",  5*1.4, 4*1.4)
+plot.new()
+plot.window(c(-1,1), c(-1,1))
+legend(x= -1,y = .75, pch = 23, col =  colsts[target], pt.bg = colsts[target], lty = 0,
+       legend = c(expression(pulse(X["1,t"]))),
+       pt.cex = 2, lwd = 2, border = "white", bty = "n", cex = 1)
+legend(x= -.5,y = .75, pch = 23,  col =  "black", pt.bg = colsts[target], lty = 0,
+       legend = c(expression(press(X["1"]))),
+       pt.cex = 2, lwd = 2, border = "white", bty = "n", cex = 1)
+
+legend(x= 0,y = .75, pch = 21, col =  "black", pt.bg = colsts[target], lty = 0,
+       legend = c(expression(shift(X["1"]))),
+       pt.cex = 2, lwd = 2, border = "white", bty = "n", cex = 1)
+legend(x = .5, y = .75, lty = 2, col = "gray", legend = expression(mu), cex = 1.15, lwd = 2,
+       bty = "n")
+
+# legend for each line
+legend(x = -1.04, y = .5, lty = 1, col = colsts[1], legend = expression(X["1,t"]), cex = 1.15, lwd = 2,
+       bty = "n")
+legend(x = -.54, y = .5, lty = 1, col = colsts[2], legend = expression(X["2,t"]), cex = 1.15, lwd = 2,
+       bty = "n")
+legend(x = -0.04, y = .5, lty = 1, col = colsts[3], legend = expression(X["3,t"]), cex = 1.15, lwd = 2,
+       bty = "n")
+legend(x = .5, y = .5, lty = 1, col = colsts[4], legend = expression(X["4,t"]), cex = 1.15, lwd = 2,
+       bty = "n")
+
+dev.off()
+
+
+# ------------------------------------------------------------------------------------
+# ---------------------------------- Figure 3 ----------------------------------------
+# ------------------------------------------------------------------------------------
+
+
+pdf("figures/figure3_a.pdf",4,4)
+netplot(B, posCol = posCol,negCol = negCol,
+        edge.label.position = c(0.5,0.5,0.5,0.425,0.425,0.5,0.5,0.5))
+dev.off()
+
+pdf("figures/figure3_b.pdf",4,4)
+netplot(rs_beta(B), posCol = posCol,negCol = negCol,
+        edge.label.position = c(0.5,0.425,0.425,0.5))
+dev.off()
+
+
+
+# ------------------------------------------------------------------------------------
+# ---------------------------------- Figure 5 ----------------------------------------
+# ------------------------------------------------------------------------------------
+
+
+pdf("figures/figure5_a.pdf", 5*1.2, 4*1.2)
+layout(c(1), widths = c(1))
+plotTimeSeries(x, xseq, cols = colsts, mu = mu, axl = 2.4, cex.axis = 1.35, cex.lab = 2,
+               alphax = .4, mulwd = 3)
+dev.off()
+
+pdf("figures/figure5_c.pdf", 5*1.2, 4*1.2)
+layout(c(1), widths = c(1))
+plotTimeSeries(x, xseq, cols = colsts, mu = mu, axl = 2.4, cex.axis = 1.35, cex.lab = 2,
+               alphamu = .5)
+t = 45
+for(i in 1:4) points(xseq[t], x[t,i], pch = 19, cex = 2, col = alpha(colsts[i], .5), lwd = 2)
+dev.off()
+
+
+# ------------------------------------------------------------------------------------
+# -------------------------- Sanity Results (Figure 4) -------------------------------
+# ------------------------------------------------------------------------------------
+
 res <- readRDS('Results/sanity-results.RDS')
 dat <- get_dat(res)
 
-add_true_effect <- function(target, effect, xlims = c(50, 1000)) {
-  true_effects <- comp_press(B, rep(0, 4), target = target, a = 1)
-  lines(
-    x = xlims, y = c(true_effects[effect], true_effects[effect]),
-    lwd = 2, lty = 2, col = 'gray76'
-  )
-}
-
-add_true_param <- function(B, target, effect, xlims = c(50, 1000)) {
-  lines(
-    x = xlims, y = c(B[target, effect], B[target, effect]),
-    lwd = 2, lty = 2, col = 'gray76'
-  )
-}
-
-datb <- dat %>% 
-  group_by(betas, n) %>% 
-  summarize(
-    mean = mean(beta_values),
-    sd = sd(beta_values)
-  )
-
-datc <- dat %>% 
-  group_by(causal, n) %>% 
-  summarize(
-    mean = mean(causal_values),
-    sd = sd(causal_values)
-  )
-
 n <- unique(datb$n)
 
-add_sdband <- function(n, m, sd, col) {
-  polygon(
-    c(n, rev(n)), c(m - sd, rev(m + sd)),
-    col = adjustcolor(col, 0.25), border = NA
-  )
-}
-
 main <- 'Estimated Parameters Across Sample Size'
-
-# Function for creating line plots
-plot_estimation <- function(
-    x, d1, d2, d3, d4, ylim, y_axis = TRUE,
-    cols = brewer.pal(4, 'Dark2'), ...
-  ) {
-  
-  plot(
-    x, d1$mean, axes = FALSE,
-    pch = 20, ylim = ylim, cex = 1.25,
-    type = 'l', lwd = 2, col = cols[1],
-    cex.lab = 1.25, font.main = 1, ...
-  )
-  
-  add_sdband(x, d1$mean, d1$sd, cols[1])
-  lines(x, d2$mean, lwd = 2, col = cols[2])
-  add_sdband(x, d2$mean, d2$sd, col = cols[2])
-  
-  lines(x, d3$mean, lwd = 2, col = cols[3])
-  add_sdband(x, d3$mean, d3$sd, col = cols[3])
-  
-  lines(x, d4$mean, lwd = 2, col = cols[4])
-  add_sdband(x, d4$mean, d4$sd, col = cols[4])
-  
-  if (y_axis) {
-    axis(2, las = 2, at = seq(ylim[1], ylim[length(ylim)], 0.20))
-  }
-}
-
 
 pdf('Figures/Simulated-Results-Sanity.pdf', width = 9, height = 5)
 par(mfrow = c(1, 2))
@@ -197,10 +271,11 @@ legend(
 )
 dev.off()
 
+# ------------------------------------------------------------------------------------
+# ----------------- Equilibrium - Snapshot Weights Results (Figure 6) ----------------
+# ------------------------------------------------------------------------------------
 
-############################################
-##### Equilibrium - Snapshot Weights Results (Figure 6)
-############################################
+
 res <- readRDS('Results/measurement-results.RDS')
 datm <- get_dat(res)
 
@@ -212,14 +287,6 @@ title_43 <- expression('Effect of ' ~ X[4] ~ ' on ' ~ X[3])
 ylimb <- c(-0.20, 0.80)
 ylimb2 <- c(-0.80, 0.20)
 
-add_true_effect <- function(target, effect) {
-  label_x <- seq(1, by = 1.75, length.out = 6)
-  true_effects <- comp_press(B, rep(0, 4), target = target, a = 1)
-  lines(
-    x = c(0.75, 9.50), y = c(true_effects[effect], true_effects[effect]),
-    lwd = 2, lty = 2, col = 'gray76'
-  )
-}
 
 pdf('Figures/Simulated-Results-Measurement.pdf', width = 9, height = 7)
 par(mfrow = c(2, 2))
@@ -231,7 +298,7 @@ plot_box(
   main = title_12, x_axis = FALSE
 )
 axis(2, las = 2, at = seq(ylimb[1], ylimb[length(ylimb)], 0.20))
-add_true_effect(1, 2)
+add_true_effect2(1, 2)
 
 legend(
   'bottomleft',
@@ -253,7 +320,7 @@ plot_box(
   datm, 'X1', 'X3', ylim = ylimb,
   xlab = '', ylab = '', main = title_13, x_axis = FALSE
 )
-add_true_effect(1, 3)
+add_true_effect2(1, 3)
 
 par(mar = c(4, 5, 1, -0.10) + 0.10)
 plot_box(
@@ -263,7 +330,7 @@ plot_box(
   main = title_42, x_axis = TRUE
 )
 axis(2, las = 2, at = seq(ylimb2[1], ylimb2[length(ylimb2)], 0.20))
-add_true_effect(4, 2)
+add_true_effect2(4, 2)
 
 par(mar = c(4, 1, 1, 3) + 0.10)
 plot_box(
@@ -271,13 +338,14 @@ plot_box(
   xlab = expression(sigma[epsilon]^2 / (1 + sigma[epsilon]^2)),
   ylab = '', main = title_43, x_axis = TRUE
 )
-add_true_effect(4, 3)
+add_true_effect2(4, 3)
 dev.off()
 
+# ------------------------------------------------------------------------------------
+# ------ Equilibrium - Snapshot Weights Latent / State Results (Appendix, Figure 9)  -
+# ------------------------------------------------------------------------------------
 
-######################################################################
-##### Equilibrium - Snapshot Weights Latent / State Results (Appendix)
-######################################################################
+
 res <- readRDS('Results/measurement-corr-results.RDS')
 datm <- get_dat(res)
 
@@ -291,7 +359,7 @@ plot_box(
   main = title_12, x_axis = FALSE
 )
 axis(2, las = 2, at = seq(ylimb[1], ylimb[length(ylimb)], 0.20))
-add_true_effect(1, 2)
+add_true_effect2(1, 2)
 
 legend(
   'bottomleft',
@@ -313,7 +381,7 @@ plot_box(
   datm, 'X1', 'X3', ylim = ylimb,
   xlab = '', ylab = '', main = title_13, x_axis = FALSE
 )
-add_true_effect(1, 3)
+add_true_effect2(1, 3)
 
 par(mar = c(4, 5, 1, -0.10) + 0.10)
 plot_box(
@@ -323,7 +391,7 @@ plot_box(
   main = title_42, x_axis = TRUE
 )
 axis(2, las = 2, at = seq(ylimb2[1], ylimb2[length(ylimb2)], 0.20))
-add_true_effect(4, 2)
+add_true_effect2(4, 2)
 
 par(mar = c(4, 1, 1, 3) + 0.10)
 plot_box(
@@ -331,12 +399,13 @@ plot_box(
   xlab = expression(sigma[epsilon]^2 / (1 + sigma[epsilon]^2)),
   ylab = '', main = title_43, x_axis = TRUE
 )
-add_true_effect(4, 3)
+add_true_effect2(4, 3)
 dev.off()
 
-##################################
-##### State / Trait Results Figure
-##################################
+# ------------------------------------------------------------------------------------
+# ------------------------- State / Trait Results (Figure 7)  ------------------------
+# ------------------------------------------------------------------------------------
+
 res <- readRDS('Results/state-trait-results.RDS')
 dat <- get_dat(res)
 
@@ -407,10 +476,10 @@ plot_estimation(
 )
 axis(1, at = seq(0.50, 0.90, 0.10))
 #lines(x = c(0.70, 0.70), y = c(-0.80, 1), lwd = 2, col = 'gray76', lty = 2)
-add_true_effect(1, 2, xlim = xlim)
-add_true_effect(1, 3, xlim = xlim)
-add_true_effect(4, 3, xlim = xlim)
-add_true_effect(4, 2, xlim = xlim)
+add_true_effect2(1, 2, xlim = xlim)
+add_true_effect2(1, 3, xlim = xlim)
+add_true_effect2(4, 3, xlim = xlim)
+add_true_effect2(4, 2, xlim = xlim)
 
 legend(
   'topright',
@@ -426,10 +495,10 @@ legend(
 dev.off()
 
 
+# ------------------------------------------------------------------------------------
+# --------------- Backshift simulation results (Figures 10 and 11)  ------------------
+# ------------------------------------------------------------------------------------
 
-##################################
-##### Backshift simulation results
-##################################
 pal <- rev(brewer.pal(9, 'Blues')[-1])
 filename <- 'Results/backshift-metrics.csv'
 
@@ -473,9 +542,9 @@ dat %>%
     L1_mean = mean(L1)
   )
 
-################################
-##### Simulation Results Figures
-################################
+
+# ----------------  Simulation Results Figures ------------
+
 datplot1 <- filter(dat, corr %in% c(0, 0.50))
 datplot2 <- filter(dat, corr %in% c(0, 0.50), n == 500)
 

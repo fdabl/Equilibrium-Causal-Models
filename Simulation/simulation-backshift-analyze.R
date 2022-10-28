@@ -1,7 +1,8 @@
 # ################################################################
 # This script analyzes the output of simulation-backshift-create.R
 # ################################################################
-source('Code/helpers.R')
+source('functions_helpers.R')
+source('functions_ecm.R')
 
 cores <- detectCores()
 cl <- makeCluster(cores - 8)

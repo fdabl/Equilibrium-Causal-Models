@@ -1,7 +1,9 @@
 # #########################################################################
 # This script runs the measurement simulation study summarized in Figure 6
 # #########################################################################
-source('Code/helpers.R')
+source('functions_helpers.R')
+source('functions_ecm.R')
+
 
 # True underlying p = 4 system
 B4 <- t(matrix(

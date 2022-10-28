@@ -1,7 +1,9 @@
 # ###########################################################################
 # This script runs the "sanity check" simulation study summarized in Figure 4
 # ###########################################################################
-source('Code/helpers.R')
+source('functions_helpers.R')
+source('functions_ecm.R')
+
 
 # True underlying p = 4 system
 B4 <- t(matrix(
