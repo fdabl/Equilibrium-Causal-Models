@@ -6,6 +6,15 @@ library('RColorBrewer')
 source('Code/helpers.R')
 cols <- brewer.pal(3, 'Set1')
 
+B4 <- t(matrix(
+  c(.5,   0, 0,  0,
+    .3, .4, .2,  0,
+    0,  .2, .2, -.4,
+    0,   0,  0,  .4), 4, 4, byrow = T
+))
+
+B <- rs_beta(t(B4))
+
 # Get beta estimates from the simulation results object
 get_beta <- function(res, resid_cor = 0, resid_prop = 0) {
   p <- 4
@@ -258,7 +267,7 @@ add_true_effect(1, 3)
 par(mar = c(4, 5, 1, -0.10) + 0.10)
 plot_box(
   datm, 'X4', 'X2', ylim = ylimb2,
-  xlab = expression(sigma[epsilon]^2 / (1 + sigma[epsilon]^2)),
+  xlab = expression(sigma[s]^2 / (1 + sigma[s]^2)),
   ylab = 'Causal effect',
   main = title_42, x_axis = TRUE
 )
@@ -268,7 +277,7 @@ add_true_effect(4, 2)
 par(mar = c(4, 1, 1, 3) + 0.10)
 plot_box(
   datm, 'X4', 'X3', ylim = ylimb2,
-  xlab = expression(sigma[epsilon]^2 / (1 + sigma[epsilon]^2)),
+  xlab = expression(sigma[s]^2 / (1 + sigma[s]^2)),
   ylab = '', main = title_43, x_axis = TRUE
 )
 add_true_effect(4, 3)
@@ -318,7 +327,7 @@ add_true_effect(1, 3)
 par(mar = c(4, 5, 1, -0.10) + 0.10)
 plot_box(
   datm, 'X4', 'X2', ylim = ylimb2,
-  xlab = expression(sigma[epsilon]^2 / (1 + sigma[epsilon]^2)),
+  xlab = expression(sigma[s]^2 / (1 + sigma[s]^2)),
   ylab = 'Causal effect',
   main = title_42, x_axis = TRUE
 )
@@ -328,7 +337,7 @@ add_true_effect(4, 2)
 par(mar = c(4, 1, 1, 3) + 0.10)
 plot_box(
   datm, 'X4', 'X3', ylim = ylimb2,
-  xlab = expression(sigma[epsilon]^2 / (1 + sigma[epsilon]^2)),
+  xlab = expression(sigma[s]^2 / (1 + sigma[s]^2)),
   ylab = '', main = title_43, x_axis = TRUE
 )
 add_true_effect(4, 3)
@@ -371,6 +380,7 @@ plot_estimation(
 xlim <- c(0.50, 0.90)
 axis(1, at = seq(0.50, 0.90, 0.10))
 #lines(x = c(0.70, 0.70), y = c(-0.80, 1), lwd = 2, col = 'gray76', lty = 2)
+lines(x = c(0.70, 0.70), y = c(-0.80, 1), lwd = 1, col = 'black', lty = 1)
 add_true_param(t(B), 1, 2, xlim = xlim)
 add_true_param(t(B), 2, 3, xlim = xlim)
 add_true_param(t(B), 3, 2, xlim = xlim)
@@ -411,6 +421,7 @@ add_true_effect(1, 2, xlim = xlim)
 add_true_effect(1, 3, xlim = xlim)
 add_true_effect(4, 3, xlim = xlim)
 add_true_effect(4, 2, xlim = xlim)
+lines(x = c(0.70, 0.70), y = c(-0.80, 1), lwd = 1, col = 'black', lty = 1)
 
 legend(
   'topright',
