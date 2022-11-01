@@ -1,3 +1,7 @@
+source('ECM.R')
+source('helpers.R')
+
+
 B4 <- t(matrix(
   c(.5,   0, 0,  0,
     .3, .4, .2,  0,
@@ -68,7 +72,7 @@ res_sem <- foreach(i = seq(nr_config), .combine = 'rbind') %dopar% {
   )
 }
 
-saveRDS(res_sem, 'Results/state-trait-results.RDS')
+saveRDS(res_sem, 'Results/state_trait_results.RDS')
 
 
 ##########################################
@@ -131,4 +135,4 @@ res_sem <- foreach(i = seq(nr_config), .combine = 'rbind') %dopar% {
   )
 }
 
-saveRDS(res_sem, 'Results/measurement-corr-results.RDS')
+saveRDS(res_sem, 'Results/measurement_corr_results.RDS')

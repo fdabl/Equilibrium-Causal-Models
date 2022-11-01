@@ -1,7 +1,8 @@
 # ################################################################
 # This script analyzes the output of simulation-backshift-create.R
 # ################################################################
-source('Code/helpers.R')
+source('ECM.R')
+source('helpers.R')
 
 cores <- detectCores()
 cl <- makeCluster(cores - 8)
@@ -15,7 +16,7 @@ B4 <- t(matrix(
 ))
 
 Bs <- list('4' = t(rs_beta(t(B4))))
-res <- readRDS('Results/backshift-estimates.RDS')
+res <- readRDS('Results/backshift_estimates.RDS')
 
 start <- Sys.time()
 
@@ -50,7 +51,7 @@ colnames(dat) <- c(
 dat <- data.frame(dat)
 dat <- apply(dat, 2, as.numeric)
 rownames(dat) <- NULL
-write.csv(dat, 'Results/backshift-metrics-test.csv', row.names = FALSE)
+write.csv(dat, 'Results/backshift_metrics_test.csv', row.names = FALSE)
 
 end <- Sys.time()
 print(end - start)

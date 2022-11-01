@@ -1,7 +1,9 @@
 # ########################################################################
 # This script runs the backshift simulation study summarized in Appendix C
 # ########################################################################
-source('Code/helpers.R')
+source('ECM.R')
+source('helpers.R')
+
 
 cores <- detectCores()
 cl <- makeCluster(cores - 3)
@@ -96,4 +98,4 @@ res <- foreach(
 
 end <- Sys.time()
 print(end - start)
-saveRDS(res, 'Results/backshift-estimates.RDS')
+saveRDS(res, 'Results/backshift_estimates.RDS')

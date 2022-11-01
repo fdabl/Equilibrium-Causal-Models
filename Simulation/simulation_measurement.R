@@ -1,7 +1,9 @@
 # #########################################################################
 # This script runs the measurement simulation study summarized in Figure 6
 # #########################################################################
-source('Code/helpers.R')
+source('ECM.R')
+source('helpers.R')
+
 
 # True underlying p = 4 system
 B4 <- t(matrix(
@@ -82,4 +84,4 @@ res_sem <- foreach(i = seq(nr_config), .combine = 'rbind') %dopar% {
   )
 }
 
-saveRDS(res_sem, 'Results/measurement-results.RDS')
+saveRDS(res_sem, 'Results/measurement_results.RDS')

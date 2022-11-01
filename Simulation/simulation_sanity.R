@@ -1,7 +1,8 @@
 # ###########################################################################
 # This script runs the "sanity check" simulation study summarized in Figure 4
 # ###########################################################################
-source('Code/helpers.R')
+source('ECM.R')
+source('helpers.R')
 
 # True underlying p = 4 system
 B4 <- t(matrix(
@@ -66,4 +67,4 @@ res_sem <- foreach(i = seq(nr_config), .combine = 'rbind') %dopar% {
   )
 }
 
-saveRDS(res_sem, 'Results/sanity-results.RDS')
+saveRDS(res_sem, 'Results/sanity_results.RDS')
