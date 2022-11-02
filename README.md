@@ -1,5 +1,5 @@
 # Equilibrium Causal Models
-This repository contains code to reproduce all analyses and figures in Ryan, O.<sup>&#11089;</sup> \& Dablander, F.<sup>&#11089;</sup> ([2022](LINK)). Equilibrium Causal Models: Connecting Dynamical Systems Modeling and Cross-Sectional Data Analysis.
+This repository contains code to reproduce all analyses and figures in Ryan, O.<sup>&#11089;</sup> \& Dablander, F.<sup>&#11089;</sup> ([2022](https://psyarxiv.com/q4d9g)). Equilibrium Causal Models: Connecting Dynamical Systems Modeling and Cross-Sectional Data Analysis.
 
 - `figures.R` code to reproduce all figures in the manuscript
 - `ECM.R` helper functions relating to ECMs, such as computing shift and press interventions, re-scaling matrices, etc.
