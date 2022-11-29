@@ -67,7 +67,7 @@ comp_int <- function(Beta,
 # Re-scale the variance covariance matrix of the intercepts
 rs_sigma <- function(S, B){
   p <- ncol(S)
-  ind <- which(diag(B) ! =0)
+  ind <- which(diag(B) != 0)
   
   if (length(ind) == 0) {
     return(S)

@@ -49,7 +49,7 @@ B <- matrix(c(.5,0,0,0,
               0,0,0,.4),p,p,byrow = T)
 
 intercepts <- c(.5, 1.25, -2, -1.25)
-rs_beta(B)
+Beq <- rs_beta(B)
 
 mu <- solve(diag(p) - B) %*% intercepts
 mu
@@ -248,17 +248,17 @@ plot_estimation(
   main = 'Parameter Estimates', xlab = 'Sample size n'
 )
 axis(1, at = c(50, seq(200, 1000, 200)))
-add_true_param(t(B), 1, 2)
-add_true_param(t(B), 2, 3)
-add_true_param(t(B), 3, 2)
-add_true_param(t(B), 4, 3)
+add_true_param(t(Beq), 1, 2)
+add_true_param(t(Beq), 2, 3)
+add_true_param(t(Beq), 3, 2)
+add_true_param(t(Beq), 4, 3)
 legend(
   'topleft',
   legend = c(
-    expression(beta[12]),
-    expression(beta[23]),
-    expression(beta[32]),
-    expression(beta[43])
+    TeX('$\\tilde{\\phi}_{12}$'),
+    TeX('$\\tilde{\\phi}_{23}$'),
+    TeX('$\\tilde{\\phi}_{32}$'),
+    TeX('$\\tilde{\\phi}_{43}$')
   ),
   ncol = 2, x.intersp = 0.50,
   fill = brewer.pal(4, 'Dark2'), bty = 'n'
@@ -464,10 +464,10 @@ xlim <- c(0.50, 0.90)
 axis(1, at = seq(0.50, 0.90, 0.10))
 #lines(x = c(0.70, 0.70), y = c(-0.80, 1), lwd = 2, col = 'gray76', lty = 2)
 lines(x = c(0.70, 0.70), y = c(-0.80, 1), lwd = 1, col = 'black', lty = 1)
-add_true_param(t(B), 1, 2, xlim = xlim)
-add_true_param(t(B), 2, 3, xlim = xlim)
-add_true_param(t(B), 3, 2, xlim = xlim)
-add_true_param(t(B), 4, 3, xlim = xlim)
+add_true_param(t(Beq), 1, 2, xlim = xlim)
+add_true_param(t(Beq), 2, 3, xlim = xlim)
+add_true_param(t(Beq), 3, 2, xlim = xlim)
+add_true_param(t(Beq), 4, 3, xlim = xlim)
 legend(
   'topleft',
   legend = c(
@@ -524,7 +524,7 @@ dev.off()
 # --------------- Backshift simulation results (Figures 10 and 11)  ------------------
 # ------------------------------------------------------------------------------------
 pal <- rev(brewer.pal(9, 'Blues')[-1])
-filename <- 'Results/backshift-metrics.csv'
+filename <- 'Results/backshift_metrics.csv'
 
 dat <- read.csv(filename) %>% 
   mutate(
