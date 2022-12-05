@@ -4,7 +4,7 @@
 cff-version: 1.2.0
 title: >-
   Supplementary Material for "Equilibrium Causal
-  Models"
+  Models: Connecting Dynamical Systems Modeling and Cross-Sectional Data Analysis"
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
@@ -18,3 +18,4 @@ authors:
     family-names: Ryan
     email: o.ryan@uu.nl
     affiliation: Utrecht University
+ url: "https://github.com/fdabl/Equilibrium-Causal-Models"
