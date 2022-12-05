@@ -1,0 +1,20 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  Supplementary Material for "Equilibrium Causal
+  Models"
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Fabian
+    family-names: Dablander
+    email: f.dablander@uva.nl
+    affiliation: University of Amsterdam
+  - given-names: Oisín
+    family-names: Ryan
+    email: o.ryan@uu.nl
+    affiliation: Utrecht University
