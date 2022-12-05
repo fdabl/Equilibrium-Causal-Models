@@ -13,7 +13,6 @@ authors:
     email: o.ryan@uu.nl
     affiliation: Utrecht University
 title: "Supplementary Material for Equilibrium Causal Models: Connecting Dynamical Systems Modeling and Cross-Sectional Data Analysis"
-version: 2.0.4
-doi: 10.5281/zenodo.1234
-date-released: 2017-12-18
+version: 1.0.0
+date-released: 2022-11-02
 url: "https://github.com/fdabl/Equilibrium-Causal-Models"
