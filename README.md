@@ -15,8 +15,9 @@ This repository contains code to reproduce all analyses and figures in Ryan, O.<
     - `Results/state_trait_results.RDS` holds the results of the simulation summarized in Figure 7.
     - `Results/backshift_estimates.RDS` holds the estimated causal models.
     - `Results/backshift_metrics.csv` holds the metrics calculated on the estimated causal models.
-- **Example/** includes code for an example `lavaan` analysis based on simulated data
-    - `Example/example_datagen.R` creates simulated data based on the running example in the main text with imperfect measurements of the equilibrium
-    - `Example/example_data.RDS` simulated dataset created by `example_datagen.R`
-    - `Example/example_modelfit.R` fits the ECM using lavaan and the measurement model constraints described in Appendix C. 
+- **Example/** includes code for an example `lavaan` and `backShift` analysis based on simulated data:
+    - `Example/example_datagen.R` creates simulated data based on the running example in the main text with imperfect measurements of the equilibrium, used by `example_modelfit.R`.
+    - `Example/example_data.RDS` simulated data set created by `example_datagen.R`.
+    - `Example/example_modelfit.R` fits the ECM using `lavaan` and the measurement model constraints described in Appendix C.
+    - `Example/example_backshift.R` creates equilibrium data and estimates an ECM using `backShift`, as in the simulation described in Appendix D.
 - **Figures/** includes all figures in the manuscript.

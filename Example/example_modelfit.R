@@ -1,6 +1,5 @@
-# File to show how the measurement model can be 'fixed' in lavaan
+# Example to show how the measurement model can be 'fixed' in lavaan
 # when measurements contain trait and state variance
-
 # --------------------------------------------------------
 #  ----------------------- Set-up ------------------------
 # --------------------------------------------------------
@@ -10,7 +9,7 @@ library('MASS')
 library('lavaan')
 
 # load data
-x <- readRDS('example_data.RDS')
+x <- readRDS('Example/example_data.RDS')
 
 # ---------------- Lavaan ------------------------
 

@@ -1,4 +1,4 @@
-# File to generate data with 'error variances' representing state components 
+# File to generate data with 'error variances' representing state components
 library('MASS')
 
 # number of variables
@@ -6,7 +6,7 @@ q <- 4
 
 # specify beta matrix
 a <- 0.5
-b<- 0.33
+b <- 0.33
 c <- 0.25
 d <- -0.5
 
