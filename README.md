@@ -20,4 +20,5 @@ This repository contains code to reproduce all analyses and figures in Ryan, O.<
     - `Example/example_data.RDS` simulated data set created by `example_datagen.R`.
     - `Example/example_modelfit.R` fits the ECM using `lavaan` and the measurement model constraints described in Appendix C.
     - `Example/example_backshift.R` creates equilibrium data and estimates an ECM using `backShift`, as in the simulation described in Appendix D.
+    - `Example/empirical_example2.R` illustrates using `backShift` on the data of Blanken et al. (2019), as described in Appendix E.
 - **Figures/** includes all figures in the manuscript.
