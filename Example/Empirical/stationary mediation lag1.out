@@ -1,0 +1,816 @@
+Mplus VERSION 8.2
+MUTHEN & MUTHEN
+02/09/2024  11:16 AM
+
+INPUT INSTRUCTIONS
+
+  data:
+  file is Example Data2 (no labels).csv;
+
+  VARIABLE:
+  NAMES ARE steps adhere pers day id;
+  USEVAR ARE steps adhere pers;
+  WITHIN= adhere; !Adherence is binary and not person-mean centered;
+  CLUSTER= id; !repeated measures are clustered within ID;
+  LAGGED= steps(1) adhere(1) pers(1);
+  !create lag-1 predictors for steps and perseverance and lag-1
+  !and lag-2 predictors for adherence;
+  TINTERVAL = day(1);
+  !specify the largest increment of time that can have only one observation;
+  MISSING ARE .;
+  !specify missing data indicator;
+
+
+  ANALYSIS:
+  TYPE= TWOLEVEL RANDOM; !Two-Level Model with random effects;
+  ESTIMATOR=BAYES;!Lagged variables can only be estimated with Bayes in Mplus;
+  BITERATIONS= (5000); !Run at least 5000 iteration of the MCMC algorithm;
+
+  MODEL:
+  %WITHIN%
+  adhere ON adhere&1;!Adherence yesterday predicts Adherence today, phi_x;
+
+  pers ON pers&1;!Perseverance yesterday predicts Perseverance today, phi_y;
+  pers ON adhere&1 (a);!Adherence yesterday predicts Perseverance today, a-path;
+
+  steps ON steps&1; !Steps yesterday predicts Steps today, phi_y;
+  steps ON pers&1 (b); !Perseverance yesterday predicts Steps today, b-path;
+  steps ON adhere&1; !Adherence yesterday predicts Steps today, c-prime path;
+
+  logv1|Pers;!Residual variance of Perseverance is person-specific, sigma^2_mi;
+  logv2|steps;!Residual variance of Steps is person-specific, sigma^2_yi;
+
+  %BETWEEN%
+  [pers]; !Average person-mean of Perseverance, gamma_m0;
+  pers; !Between-person variability of Perseverance person means, upsilon_11;
+
+  [steps]; !Average person-mean of Steps, gamma_Y0;
+  steps; !Between-person variability of Steps person means, upsilon_22;
+
+  [logv1];!Average residual variance of Perseverance (on log scale), omega_m0;
+  logv1; !Between-person variance of Perseverance volatility, upsilon_33;
+
+  [logv2];!Average residual variance of Steps (on log scale), omega_y0;
+  logv2; !Between-person variance of Steps volatility, upsilon_44;
+
+  MODEL CONSTRAINT:
+  NEW (ind); !create new parameter for indirect effect;
+  ind=a*b; !indirect effect is path labeled as “a” times path labeled as “b”;
+
+  output: TECH8;
+
+  SAVEDATA:
+  BPARAMETERS = bpars_saved_l1.dat;
+  FILE IS fscores_saved_l1.dat;
+  SAVE IS FSCORES(1000,10);
+  
+
+
+
+
+INPUT READING TERMINATED NORMALLY
+
+
+
+
+SUMMARY OF ANALYSIS
+
+Number of groups                                                 1
+Number of observations                                        1750
+
+Number of dependent variables                                    3
+Number of independent variables                                  3
+Number of continuous latent variables                            2
+
+Observed dependent variables
+
+  Continuous
+   STEPS       ADHERE      PERS
+
+Observed independent variables
+   STEPS&1     ADHERE&1    PERS&1
+
+Continuous latent variables
+   LOGV1       LOGV2
+
+Variables with special functions
+
+  Cluster variable      ID
+
+  Within variables
+   ADHERE      STEPS&1     ADHERE&1    PERS&1
+
+
+Estimator                                                    BAYES
+Specifications for Bayesian Estimation
+  Point estimate                                            MEDIAN
+  Number of Markov chain Monte Carlo (MCMC) chains               2
+  Random seed for the first chain                                0
+  Starting value information                           UNPERTURBED
+  Algorithm used for Markov chain Monte Carlo           GIBBS(PX1)
+  Convergence criterion                                  0.500D-01
+  Maximum number of iterations                               50000
+  K-th iteration used for thinning                               1
+Specifications for Bayes Factor Score Estimation
+  Number of imputed data sets                                 1000
+  Iteration intervals for thinning                              10
+
+Input data file(s)
+  Example Data2 (no labels).csv
+Input data format  FREE
+
+
+SUMMARY OF DATA
+
+     Number of clusters                         50
+
+       Size (s)    Cluster ID with Size s
+
+         35        1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21
+                   22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39
+                   40 41 42 43 44 45 46 47 48 49 50
+
+
+
+SUMMARY OF MISSING DATA PATTERNS
+
+     Number of missing data patterns             6
+
+
+     MISSING DATA PATTERNS (x = not missing)
+
+           1  2  3  4  5  6
+ STEPS     x  x     x
+ ADHERE    x  x  x  x  x  x
+ PERS      x  x     x
+ STEPS&1   x     x
+ ADHERE&1  x     x  x  x
+ PERS&1    x     x
+
+
+     MISSING DATA PATTERN FREQUENCIES
+
+    Pattern   Frequency     Pattern   Frequency     Pattern   Frequency
+          1        1212           3         224           5          45
+          2          49           4         219           6           1
+
+
+COVARIANCE COVERAGE OF DATA
+
+Minimum covariance coverage value   0.100
+
+
+     PROPORTION OF DATA PRESENT
+
+
+           Covariance Coverage
+              STEPS         ADHERE        PERS
+              ________      ________      ________
+ STEPS          0.846
+ ADHERE         0.846         1.000
+ PERS           0.846         0.846         0.846
+
+
+
+UNIVARIATE SAMPLE STATISTICS
+
+
+     UNIVARIATE HIGHER-ORDER MOMENT DESCRIPTIVE STATISTICS
+
+         Variable/         Mean/     Skewness/   Minimum/ % with                Percentiles
+        Sample Size      Variance    Kurtosis    Maximum  Min/Max      20%/60%    40%/80%    Median
+
+     STEPS                68.717      -0.004       2.260    0.07%      50.380     63.480     68.930
+            1480.000     516.656       0.129     136.740    0.07%      73.920     86.960
+     ADHERE                0.664      -0.694       0.000   33.60%       0.000      1.000      1.000
+            1750.000       0.223      -1.518       1.000   66.40%       1.000      1.000
+     PERS                  8.693       0.027       3.000    4.32%       6.000      8.000      9.000
+            1480.000       8.840      -0.666      15.000    2.16%       9.000     11.000
+
+
+THE MODEL ESTIMATION TERMINATED NORMALLY
+
+     USE THE FBITERATIONS OPTION TO INCREASE THE NUMBER OF ITERATIONS BY A FACTOR
+     OF AT LEAST TWO TO CHECK CONVERGENCE AND THAT THE PSR VALUE DOES NOT INCREASE.
+
+
+
+MODEL FIT INFORMATION
+
+Number of Free Parameters                              16
+
+Information Criteria
+
+          Deviance (DIC)                        24958.599
+          Estimated Number of Parameters (pD)     732.664
+
+
+
+MODEL RESULTS
+
+                                Posterior  One-Tailed         95% C.I.
+                    Estimate       S.D.      P-Value   Lower 2.5%  Upper 2.5%  Significance
+
+Within Level
+
+ ADHERE     ON
+    ADHERE&1           0.533       0.020      0.000       0.493       0.573      *
+
+ PERS       ON
+    PERS&1             0.298       0.029      0.000       0.242       0.355      *
+    ADHERE&1           0.888       0.109      0.000       0.676       1.102      *
+
+ STEPS      ON
+    STEPS&1            0.420       0.026      0.000       0.370       0.469      *
+    PERS&1             2.099       0.239      0.000       1.640       2.561      *
+    ADHERE&1           1.166       1.089      0.135      -0.937       3.305
+
+ Intercepts
+    ADHERE             0.309       0.017      0.000       0.275       0.341      *
+
+ Residual Variances
+    ADHERE             0.160       0.006      0.000       0.150       0.172      *
+
+Between Level
+
+ Means
+    STEPS             64.137       1.978      0.000      60.089      67.785      *
+    PERS               7.830       0.317      0.000       7.191       8.455      *
+    LOGV1              1.328       0.094      0.000       1.139       1.512      *
+    LOGV2              5.834       0.043      0.000       5.744       5.913      *
+
+ Variances
+    STEPS             74.201      24.566      0.000      38.718     134.220      *
+    PERS               4.126       0.962      0.000       2.771       6.489      *
+    LOGV1              0.363       0.101      0.000       0.220       0.613      *
+    LOGV2              0.011       0.014      0.000       0.000       0.052      *
+
+New/Additional Parameters
+    IND                1.855       0.316      0.000       1.284       2.522      *
+
+
+TECHNICAL 1 OUTPUT
+
+
+     PARAMETER SPECIFICATION FOR WITHIN
+
+
+           NU
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+                    0             0             0             0             0
+
+
+           NU
+              PERS&1
+              ________
+                    0
+
+
+           LAMBDA
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+ STEPS              0             0             0             0             0
+ ADHERE             0             0             0             0             0
+ PERS               0             0             0             0             0
+ STEPS&1            0             0             0             0             0
+ ADHERE&1           0             0             0             0             0
+ PERS&1             0             0             0             0             0
+
+
+           LAMBDA
+              PERS&1
+              ________
+ STEPS              0
+ ADHERE             0
+ PERS               0
+ STEPS&1            0
+ ADHERE&1           0
+ PERS&1             0
+
+
+           THETA
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+ STEPS              0
+ ADHERE             0             0
+ PERS               0             0             0
+ STEPS&1            0             0             0             0
+ ADHERE&1           0             0             0             0             0
+ PERS&1             0             0             0             0             0
+
+
+           THETA
+              PERS&1
+              ________
+ PERS&1             0
+
+
+           ALPHA
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+                    0             1             0             0             0
+
+
+           ALPHA
+              PERS&1
+              ________
+                    0
+
+
+           BETA
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+ STEPS              0             0             0             2             3
+ ADHERE             0             0             0             0             5
+ PERS               0             0             0             0             6
+ STEPS&1            0             0             0             0             0
+ ADHERE&1           0             0             0             0             0
+ PERS&1             0             0             0             0             0
+
+
+           BETA
+              PERS&1
+              ________
+ STEPS              4
+ ADHERE             0
+ PERS               7
+ STEPS&1            0
+ ADHERE&1           0
+ PERS&1             0
+
+
+           PSI
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+ STEPS              0
+ ADHERE             0             8
+ PERS               0             0             0
+ STEPS&1            0             0             0             0
+ ADHERE&1           0             0             0             0             0
+ PERS&1             0             0             0             0             0
+
+
+           PSI
+              PERS&1
+              ________
+ PERS&1             0
+
+
+     PARAMETER SPECIFICATION FOR BETWEEN
+
+
+           NU
+              STEPS         PERS
+              ________      ________
+                    0             0
+
+
+           LAMBDA
+              LOGV1         LOGV2         STEPS         PERS
+              ________      ________      ________      ________
+ STEPS              0             0             0             0
+ PERS               0             0             0             0
+
+
+           THETA
+              STEPS         PERS
+              ________      ________
+ STEPS              0
+ PERS               0             0
+
+
+           ALPHA
+              LOGV1         LOGV2         STEPS         PERS
+              ________      ________      ________      ________
+                    9            10            11            12
+
+
+           BETA
+              LOGV1         LOGV2         STEPS         PERS
+              ________      ________      ________      ________
+ LOGV1              0             0             0             0
+ LOGV2              0             0             0             0
+ STEPS              0             0             0             0
+ PERS               0             0             0             0
+
+
+           PSI
+              LOGV1         LOGV2         STEPS         PERS
+              ________      ________      ________      ________
+ LOGV1             13
+ LOGV2              0            14
+ STEPS              0             0            15
+ PERS               0             0             0            16
+
+
+     PARAMETER SPECIFICATION FOR THE ADDITIONAL PARAMETERS
+
+
+           NEW/ADDITIONAL PARAMETERS
+              IND
+              ________
+                   17
+
+
+     STARTING VALUES FOR WITHIN
+
+
+           NU
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+                0.000         0.000         0.000         0.000         0.000
+
+
+           NU
+              PERS&1
+              ________
+                0.000
+
+
+           LAMBDA
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+ STEPS          1.000         0.000         0.000         0.000         0.000
+ ADHERE         0.000         1.000         0.000         0.000         0.000
+ PERS           0.000         0.000         1.000         0.000         0.000
+ STEPS&1        0.000         0.000         0.000         1.000         0.000
+ ADHERE&1       0.000         0.000         0.000         0.000         1.000
+ PERS&1         0.000         0.000         0.000         0.000         0.000
+
+
+           LAMBDA
+              PERS&1
+              ________
+ STEPS          0.000
+ ADHERE         0.000
+ PERS           0.000
+ STEPS&1        0.000
+ ADHERE&1       0.000
+ PERS&1         1.000
+
+
+           THETA
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+ STEPS          0.000
+ ADHERE         0.000         0.000
+ PERS           0.000         0.000         0.000
+ STEPS&1        0.000         0.000         0.000         0.000
+ ADHERE&1       0.000         0.000         0.000         0.000         0.000
+ PERS&1         0.000         0.000         0.000         0.000         0.000
+
+
+           THETA
+              PERS&1
+              ________
+ PERS&1         0.000
+
+
+           ALPHA
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+                0.000         0.664         0.000         0.000         0.000
+
+
+           ALPHA
+              PERS&1
+              ________
+                0.000
+
+
+           BETA
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+ STEPS          0.000         0.000         0.000         0.000         0.000
+ ADHERE         0.000         0.000         0.000         0.000         0.000
+ PERS           0.000         0.000         0.000         0.000         0.000
+ STEPS&1        0.000         0.000         0.000         0.000         0.000
+ ADHERE&1       0.000         0.000         0.000         0.000         0.000
+ PERS&1         0.000         0.000         0.000         0.000         0.000
+
+
+           BETA
+              PERS&1
+              ________
+ STEPS          0.000
+ ADHERE         0.000
+ PERS           0.000
+ STEPS&1        0.000
+ ADHERE&1       0.000
+ PERS&1         0.000
+
+
+           PSI
+              STEPS         ADHERE        PERS          STEPS&1       ADHERE&1
+              ________      ________      ________      ________      ________
+ STEPS          0.000
+ ADHERE         0.000         0.112
+ PERS           0.000         0.000         0.000
+ STEPS&1        0.000         0.000         0.000       259.689
+ ADHERE&1       0.000         0.000         0.000         0.000         0.111
+ PERS&1         0.000         0.000         0.000         0.000         0.000
+
+
+           PSI
+              PERS&1
+              ________
+ PERS&1         4.401
+
+
+     STARTING VALUES FOR BETWEEN
+
+
+           NU
+              STEPS         PERS
+              ________      ________
+                0.000         0.000
+
+
+           LAMBDA
+              LOGV1         LOGV2         STEPS         PERS
+              ________      ________      ________      ________
+ STEPS          0.000         0.000         1.000         0.000
+ PERS           0.000         0.000         0.000         1.000
+
+
+           THETA
+              STEPS         PERS
+              ________      ________
+ STEPS          0.000
+ PERS           0.000         0.000
+
+
+           ALPHA
+              LOGV1         LOGV2         STEPS         PERS
+              ________      ________      ________      ________
+                0.000         0.000        68.717         8.693
+
+
+           BETA
+              LOGV1         LOGV2         STEPS         PERS
+              ________      ________      ________      ________
+ LOGV1          0.000         0.000         0.000         0.000
+ LOGV2          0.000         0.000         0.000         0.000
+ STEPS          0.000         0.000         0.000         0.000
+ PERS           0.000         0.000         0.000         0.000
+
+
+           PSI
+              LOGV1         LOGV2         STEPS         PERS
+              ________      ________      ________      ________
+ LOGV1          1.000
+ LOGV2          0.000         1.000
+ STEPS          0.000         0.000       258.328
+ PERS           0.000         0.000         0.000         4.420
+
+
+     STARTING VALUES FOR THE ADDITIONAL PARAMETERS
+
+
+           NEW/ADDITIONAL PARAMETERS
+              IND
+              ________
+                0.500
+
+
+
+     PRIORS FOR ALL PARAMETERS            PRIOR MEAN      PRIOR VARIANCE     PRIOR STD. DEV.
+
+     Parameter 1~N(0.000,infinity)           0.0000            infinity            infinity
+     Parameter 2~N(0.000,infinity)           0.0000            infinity            infinity
+     Parameter 3~N(0.000,infinity)           0.0000            infinity            infinity
+     Parameter 4~N(0.000,infinity)           0.0000            infinity            infinity
+     Parameter 5~N(0.000,infinity)           0.0000            infinity            infinity
+     Parameter 6~N(0.000,infinity)           0.0000            infinity            infinity
+     Parameter 7~N(0.000,infinity)           0.0000            infinity            infinity
+     Parameter 8~IG(-1.000,0.000)          infinity            infinity            infinity
+     Parameter 9~N(0.000,infinity)           0.0000            infinity            infinity
+     Parameter 10~N(0.000,infinity)          0.0000            infinity            infinity
+     Parameter 11~N(0.000,infinity)          0.0000            infinity            infinity
+     Parameter 12~N(0.000,infinity)          0.0000            infinity            infinity
+     Parameter 13~IG(-1.000,0.000)         infinity            infinity            infinity
+     Parameter 14~IG(-1.000,0.000)         infinity            infinity            infinity
+     Parameter 15~IG(-1.000,0.000)         infinity            infinity            infinity
+     Parameter 16~IG(-1.000,0.000)         infinity            infinity            infinity
+
+
+TECHNICAL 8 OUTPUT
+
+
+   TECHNICAL 8 OUTPUT FOR BAYES ESTIMATION
+
+     CHAIN    BSEED
+     1        0
+     2        285380
+
+                     POTENTIAL       PARAMETER WITH
+     ITERATION    SCALE REDUCTION      HIGHEST PSR
+     100              3.384               3
+     200              1.222               6
+     300              1.523               14
+     400              1.157               10
+     500              1.010               6
+     600              1.010               10
+     700              1.074               10
+     800              1.257               14
+     900              1.349               14
+     1000             1.609               14
+     1100             1.474               14
+     1200             1.376               14
+     1300             1.249               14
+     1400             1.153               14
+     1500             1.091               14
+     1600             1.079               14
+     1700             1.038               14
+     1800             1.030               10
+     1900             1.012               10
+     2000             1.028               10
+     2100             1.028               10
+     2200             1.030               10
+     2300             1.051               14
+     2400             1.029               14
+     2500             1.032               14
+     2600             1.048               14
+     2700             1.052               14
+     2800             1.083               14
+     2900             1.107               14
+     3000             1.097               14
+     3100             1.058               14
+     3200             1.046               10
+     3300             1.050               10
+     3400             1.052               10
+     3500             1.041               10
+     3600             1.028               10
+     3700             1.024               10
+     3800             1.024               10
+     3900             1.009               10
+     4000             1.002               10
+     4100             1.001               10
+     4200             1.002               13
+     4300             1.008               14
+     4400             1.023               14
+     4500             1.033               14
+     4600             1.038               14
+     4700             1.040               14
+     4800             1.029               14
+     4900             1.021               14
+     5000             1.021               14
+
+
+SUMMARIES OF PLAUSIBLE VALUES (N = NUMBER OF OBSERVATIONS * NUMBER OF IMPUTATIONS)
+
+
+     SAMPLE STATISTICS
+
+
+           Means
+              LOGV1         LOGV2         B_STEPS       B_PERS
+              ________      ________      ________      ________
+                1.332         5.829        64.111         7.832
+
+
+           Covariances
+              LOGV1         LOGV2         B_STEPS       B_PERS
+              ________      ________      ________      ________
+ LOGV1          0.343
+ LOGV2         -0.005         0.017
+ B_STEPS        0.981        -0.027        71.346
+ B_PERS         0.108         0.022         1.414         3.879
+
+
+           Correlations
+              LOGV1         LOGV2         B_STEPS       B_PERS
+              ________      ________      ________      ________
+ LOGV1          1.000
+ LOGV2         -0.067         1.000
+ B_STEPS        0.198        -0.024         1.000
+ B_PERS         0.094         0.085         0.085         1.000
+
+
+SUMMARY OF PLAUSIBLE STANDARD DEVIATION (N = NUMBER OF OBSERVATIONS)
+
+
+     SAMPLE STATISTICS
+
+
+           Means
+              LOGV1_SD      LOGV2_SD      B_STEPS_      B_PERS_S
+              ________      ________      ________      ________
+                0.250         0.121         5.065         0.502
+
+
+           Covariances
+              LOGV1_SD      LOGV2_SD      B_STEPS_      B_PERS_S
+              ________      ________      ________      ________
+ LOGV1_SD       0.000
+ LOGV2_SD       0.000         0.000
+ B_STEPS_       0.000         0.000         0.043
+ B_PERS_S      -0.001         0.000         0.009         0.012
+
+
+           Correlations
+              LOGV1_SD      LOGV2_SD      B_STEPS_      B_PERS_S
+              ________      ________      ________      ________
+ LOGV1_SD       1.000
+ LOGV2_SD       0.078         1.000
+ B_STEPS_       0.070         0.081         1.000
+ B_PERS_S      -0.537         0.140         0.380         1.000
+
+
+SAVEDATA INFORMATION
+
+
+  Save file
+    fscores_saved_l1.dat
+
+  Order and format of variables
+
+    STEPS                            F10.3
+    ADHERE                           F10.3
+    PERS                             F10.3
+    STEPS&1                          F10.3
+    ADHERE&1                         F10.3
+    PERS&1                           F10.3
+    LOGV1 Mean                       F10.3
+    LOGV1 Median                     F10.3
+    LOGV1 Standard Deviation         F10.3
+    LOGV1 2.5% Value                 F10.3
+    LOGV1 97.5% Value                F10.3
+    LOGV2 Mean                       F10.3
+    LOGV2 Median                     F10.3
+    LOGV2 Standard Deviation         F10.3
+    LOGV2 2.5% Value                 F10.3
+    LOGV2 97.5% Value                F10.3
+    B_STEPS Mean                     F10.3
+    B_STEPS Median                   F10.3
+    B_STEPS Standard Deviation       F10.3
+    B_STEPS 2.5% Value               F10.3
+    B_STEPS 97.5% Value              F10.3
+    B_PERS Mean                      F10.3
+    B_PERS Median                    F10.3
+    B_PERS Standard Deviation        F10.3
+    B_PERS 2.5% Value                F10.3
+    B_PERS 97.5% Value               F10.3
+    ID                               I3
+    _TIMEPOINT                       I3
+
+  Save file format
+    26F10.3 2I3
+
+  Save file record length    10000
+
+
+  Bayesian Parameters
+
+  Save file
+    bpars_saved_l1.dat
+  Save format      Free
+
+  Order of parameters saved
+
+    Chain number
+    Iteration number
+    Parameter 1, %WITHIN%: [ ADHERE ]
+    Parameter 2, %WITHIN%: STEPS ON STEPS&1
+    Parameter 3, %WITHIN%: STEPS ON ADHERE&1
+    Parameter 4, %WITHIN%: STEPS ON PERS&1 (equality/label)
+    Parameter 5, %WITHIN%: ADHERE ON ADHERE&1
+    Parameter 6, %WITHIN%: PERS ON ADHERE&1 (equality/label)
+    Parameter 7, %WITHIN%: PERS ON PERS&1
+    Parameter 8, %WITHIN%: ADHERE
+    Parameter 9, %BETWEEN%: [ LOGV1 ]
+    Parameter 10, %BETWEEN%: [ LOGV2 ]
+    Parameter 11, %BETWEEN%: [ STEPS ]
+    Parameter 12, %BETWEEN%: [ PERS ]
+    Parameter 13, %BETWEEN%: LOGV1
+    Parameter 14, %BETWEEN%: LOGV2
+    Parameter 15, %BETWEEN%: STEPS
+    Parameter 16, %BETWEEN%: PERS
+    Parameter 17, IND
+
+    Convergence iterations 1-5000
+    Factor score imputations iterations 5001-6000
+
+DIAGRAM INFORMATION
+
+  Mplus diagrams are currently not available for multilevel analysis.
+  No diagram output was produced.
+
+
+     Beginning Time:  11:16:12
+        Ending Time:  11:18:50
+       Elapsed Time:  00:02:38
+
+
+
+MUTHEN & MUTHEN
+3463 Stoner Ave.
+Los Angeles, CA  90066
+
+Tel: (310) 391-9971
+Fax: (310) 391-8971
+Web: www.StatModel.com
+Support: Support@StatModel.com
+
+Copyright (c) 1998-2018 Muthen & Muthen
